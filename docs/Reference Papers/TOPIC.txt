@@ -1,0 +1,3 @@
+TITLE: Multimodal AI-Based Clinical Decision Support System Using Chest X-ray Images, Clinical Symptoms, and Blood Test Reports
+
+DESCRIPTION: This project aims to develop a Multimodal AI-Based Clinical Decision Support System (CDSS) that assists healthcare professionals in predicting respiratory diseases by analyzing chest X-ray images, patient symptoms, and blood test reports. The system integrates deep learning, natural language processing, and explainable AI techniques to generate disease predictions along with interpretable explanations. Designed as a decision-support tool rather than a diagnostic system, it provides evidence-based insights to support clinical decision-making and improve diagnostic efficiency.
