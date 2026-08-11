@@ -1,6 +1,11 @@
 import os
 import sys
 from pathlib import Path
+
+# Ensure UTF-8 output on Windows console
+if sys.platform == "win32":
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 from fastapi.testclient import TestClient
 
 # Ensure backend root is in sys.path
@@ -34,7 +39,11 @@ def run_tests():
     assert r.status_code == 201
 
     print("\n--- 5. Testing Image Upload POST /api/v1/prediction/upload ---")
-    sample_img = b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4\x00\x00\x00\nIDATx\x9cc`\x00\x00\x00\x02\x00\x01H\xaf\xa4q\x00\x00\x00\x00IEND\xaeB`\x82"
+    import io
+    from PIL import Image
+    buf = io.BytesIO()
+    Image.new("RGB", (224, 224), color=(128, 128, 128)).save(buf, format="PNG")
+    sample_img = buf.getvalue()
     r = client.post("/api/v1/prediction/upload", files={"file": ("sample_chest_xray.png", sample_img, "image/png")})
     print("Status:", r.status_code, "Body:", r.json())
     assert r.status_code == 201

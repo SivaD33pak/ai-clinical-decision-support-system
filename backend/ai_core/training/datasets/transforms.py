@@ -1,9 +1,20 @@
-# Data augmentation & normalization transforms for Chest X-ray images
+from torchvision import transforms
 
-def get_train_transforms():
-    """Returns data augmentation pipeline for training."""
-    pass
+def get_train_transforms(image_size: int = 224):
+    """Medical-safe training augmentations."""
+    return transforms.Compose([
+        transforms.Resize((image_size, image_size)),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomRotation(degrees=10),
+        transforms.ColorJitter(brightness=0.1, contrast=0.1),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
 
-def get_val_transforms():
-    """Returns validation/test normalization pipeline."""
-    pass
+def get_val_transforms(image_size: int = 224):
+    """Deterministic validation/test transforms."""
+    return transforms.Compose([
+        transforms.Resize((image_size, image_size)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])

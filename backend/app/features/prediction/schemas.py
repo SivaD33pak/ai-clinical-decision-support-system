@@ -22,7 +22,11 @@ class PredictionResponse(BaseModel):
     user_id: str
     module: str
     disease: str
+    prediction: Optional[str] = None
     confidence: float
+    confidence_formatted: Optional[str] = None
+    model: Optional[str] = "Chest X-ray Model v1.0"
+    disclaimer: Optional[str] = "⚠️ AI-assisted result. This system is not a replacement for professional medical diagnosis."
     image_url: str
     heatmap_url: Optional[str] = None
     predictions_breakdown: List[PredictionBreakdown] = Field(default_factory=list)
