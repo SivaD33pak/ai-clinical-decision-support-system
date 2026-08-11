@@ -42,13 +42,18 @@ class PredictionService:
         except Exception as e:
             raise InferenceException(f"Prediction engine failed: {str(e)}")
 
+        # Resolve heatmap URL
+        heatmap_url = None
+        if inference_result.get("heatmap_generated") and inference_result.get("heatmap_path"):
+            heatmap_url = await self.storage_repo.get_heatmap_url(inference_result["heatmap_path"])
+
         prediction_data = {
             "user_id": request.user_id or "user_default_001",
             "module": request.module,
             "disease": inference_result.get("disease", "Normal"),
             "confidence": float(inference_result.get("confidence", 0.95)),
             "image_url": upload_record.get("public_url", ""),
-            "heatmap_url": upload_record.get("public_url", "") + "?heatmap=true" if inference_result.get("heatmap_generated") else None
+            "heatmap_url": heatmap_url
         }
 
         saved_record = await self.prediction_repo.save_prediction(prediction_data)

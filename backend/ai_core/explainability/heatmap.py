@@ -11,7 +11,7 @@ def _jet_colormap(val: np.ndarray) -> np.ndarray:
     b = np.clip(np.minimum(four_val + 0.5, -four_val + 2.5), 0, 1)
     return (np.stack([r, g, b], axis=-1) * 255).astype(np.uint8)
 
-def apply_heatmap_overlay(original_image_path: str, cam_tensor: torch.Tensor, output_path: str, alpha: float = 0.45) -> str:
+def apply_heatmap_overlay(original_image_path: str, cam_tensor: torch.Tensor, output_path: str, alpha: float = 0.55) -> str:
     """
     Overlays Grad-CAM attention heatmap onto the original chest X-ray image and saves to disk.
     """

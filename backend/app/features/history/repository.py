@@ -35,7 +35,7 @@ class HistoryRepository:
                     "disease": "Normal",
                     "confidence": 0.9450,
                     "image_url": "/static/uploads/sample_xray.png",
-                    "heatmap_url": "/static/uploads/sample_xray.png?heatmap=true",
+                    "heatmap_url": "/static/uploads/sample_xray_heatmap.png",
                     "created_at": "2026-08-06T10:00:00Z"
                 }
             ]
@@ -61,7 +61,7 @@ class HistoryRepository:
                 "disease": "Normal",
                 "confidence": 0.9450,
                 "image_url": "/static/uploads/sample_xray.png",
-                "heatmap_url": "/static/uploads/sample_xray.png?heatmap=true",
+                "heatmap_url": "/static/uploads/sample_xray_heatmap.png",
                 "created_at": "2026-08-06T10:00:00Z"
             }
         return None

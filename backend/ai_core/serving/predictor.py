@@ -9,19 +9,30 @@ from ai_core.explainability.heatmap import apply_heatmap_overlay
 
 class DiseasePredictor:
     """Performs inference and Explainable AI heatmap generation with clinical metadata."""
-    def __init__(self, model, device: str = "cpu"):
+    def __init__(self, model, device: str = "cpu", temperature: float = 1.25):
         self.model = model.to(device)
         self.device = device
+        self.temperature = max(0.5, temperature)
         self.model.eval()
         self.classes = getattr(model, "classes", ["Normal", "Pneumonia", "Tuberculosis"])
         self.gradcam = GradCAMGenerator(self.model, model.get_target_layer())
 
-    def predict_single(self, image_path: str, generate_cam: bool = True) -> Dict[str, Any]:
+    def predict_single(self, image_path: str, generate_cam: bool = True, use_tta: bool = True) -> Dict[str, Any]:
         input_tensor = preprocess_xray_image(image_path, device=self.device)
         
         with torch.no_grad():
-            logits = self.model(input_tensor)
-            probs = F.softmax(logits, dim=1).squeeze().cpu().numpy()
+            if use_tta:
+                # Test-Time Augmentation: Standard View + Horizontal Flip
+                flipped_tensor = torch.flip(input_tensor, dims=[3])
+                logits_orig = self.model(input_tensor)
+                logits_flip = self.model(flipped_tensor)
+                logits = (logits_orig + logits_flip) / 2.0
+            else:
+                logits = self.model(input_tensor)
+
+            # Apply Temperature Scaling for clinical calibration
+            scaled_logits = logits / self.temperature
+            probs = F.softmax(scaled_logits, dim=1).squeeze().cpu().numpy()
 
         top_idx = int(probs.argmax())
         top_disease = self.classes[top_idx]

@@ -54,6 +54,31 @@ class StorageRepository:
     async def get_upload_record(self, upload_id: str) -> Optional[Dict[str, Any]]:
         return _local_uploads_store.get(upload_id)
 
+    async def get_heatmap_url(self, heatmap_local_path: str) -> str:
+        if not heatmap_local_path or not os.path.exists(heatmap_local_path):
+            return ""
+
+        heatmap_filename = os.path.basename(heatmap_local_path)
+        public_url = f"/static/uploads/{heatmap_filename}"
+
+        # Upload to Supabase Storage if active
+        if self.supabase is not None:
+            try:
+                with open(heatmap_local_path, "rb") as f:
+                    content = f.read()
+                ext = os.path.splitext(heatmap_filename)[1].lower().replace(".", "")
+                self.supabase.storage.from_("xray-images").upload(
+                    path=heatmap_filename,
+                    file=content,
+                    file_options={"content-type": f"image/{ext or 'png'}", "upsert": "true"}
+                )
+                public_url = self.supabase.storage.from_("xray-images").get_public_url(heatmap_filename)
+                logger.info(f"Uploaded heatmap {heatmap_filename} to Supabase xray-images storage.")
+            except Exception as e:
+                logger.warning(f"Supabase heatmap upload failed: {e}. Using local static URL.")
+
+        return public_url
+
 
 class PredictionRepository:
     def __init__(self):
