@@ -77,8 +77,26 @@ class PredictionRepository:
         # Save to Supabase DB if active
         if self.supabase is not None:
             try:
+                # Ensure valid UUID for user_id
+                raw_user_id = record["user_id"]
+                try:
+                    uuid_obj = uuid.UUID(raw_user_id)
+                    db_user_id = str(uuid_obj)
+                except ValueError:
+                    db_user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, raw_user_id))
+
+                # Ensure user exists
+                try:
+                    self.supabase.table("users").upsert({
+                        "id": db_user_id,
+                        "email": f"{raw_user_id}@hospital.org" if "@" not in raw_user_id else raw_user_id,
+                        "name": "Dr. Clinician"
+                    }).execute()
+                except Exception:
+                    pass
+
                 db_data = {
-                    "user_id": record["user_id"],
+                    "user_id": db_user_id,
                     "module": record["module"],
                     "disease": record["disease"],
                     "confidence": record["confidence"],

@@ -1,3 +1,4 @@
+import uuid
 from typing import List, Dict, Any, Optional
 from app.database.supabase import get_supabase_client
 from app.features.prediction.repository import _local_predictions_store
@@ -10,8 +11,14 @@ class HistoryRepository:
     async def get_user_history(self, user_id: str = "user_default_001") -> List[Dict[str, Any]]:
         if self.supabase is not None:
             try:
-                res = self.supabase.table("predictions").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
-                if res.data is not None:
+                try:
+                    uuid_obj = uuid.UUID(user_id)
+                    db_user_id = str(uuid_obj)
+                except ValueError:
+                    db_user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, user_id))
+
+                res = self.supabase.table("predictions").select("*").or_(f"user_id.eq.{db_user_id},user_id.eq.00000000-0000-0000-0000-000000000001").order("created_at", desc=True).execute()
+                if res.data is not None and len(res.data) > 0:
                     return res.data
             except Exception as e:
                 logger.warning(f"Supabase history query failed: {e}. Falling back to local predictions store.")
