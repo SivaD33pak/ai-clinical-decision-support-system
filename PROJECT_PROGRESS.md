@@ -2,7 +2,7 @@
 
 # Project Progress
 
-> **Version:** 1.0 (Phase 01, Phase 02, and Phase 03 Fully Complete)
+> **Version:** 1.0 (Phase 01, Phase 02, Phase 03, and Phase 04 Fully Complete)
 >
 > **Status:** 🟡 In Development
 >
@@ -13,8 +13,8 @@
 # Overall Progress
 
 ```text
-████████████□□□□□□□□
-60%
+████████████████□□□□
+80%
 ```
 
 ---
@@ -24,19 +24,19 @@
 **Phase:**
 
 ```text
-04 - Flutter Frontend Engineering & UI Implementation
+05 - Supabase Cloud Database & Storage Integration
 ```
 
 **Current Task:**
 
 ```text
-Authentication, Dashboard, Chest X-Ray Upload & Grad-CAM Viewer UI Implementation
+Connecting Cloud PostgreSQL Tables & Storage Buckets (xray-images, heatmaps)
 ```
 
 **Next Phase:**
 
 ```text
-05 - Supabase Cloud Database & Storage Integration
+06 - System Integration (Flutter ↔ FastAPI ↔ Supabase ↔ AI Engine)
 ```
 
 ---
@@ -48,10 +48,10 @@ Authentication, Dashboard, Chest X-Ray Upload & Grad-CAM Viewer UI Implementatio
 | ✅ 01 Project Foundation | Complete | Folder structure, virtual env, requirements, DDL schema, docs |
 | ✅ 02 Backend Foundation | Complete | Feature slices (`auth`, `prediction`, `history`), Pydantic schemas, response envelopes, 8/8 tests passing |
 | ✅ 03 AI Model Development | Complete | 3-Class DenseNet121 fine-tuned (88.03% test acc, 100% TB sensitivity, 99.23% Pneumonia sensitivity), Grad-CAM heatmap overlay engine, `best_model.pth` exported & loaded |
-| 🟡 04 Flutter Engineering | In Progress | Feature structure created (`authentication`, `dashboard`, `prediction`, `history`, `profile`), UI screens pending |
-| ⬜ 05 Supabase Engineering | Schema Defined | SQL DDL (`users`, `predictions` tables & `xray-images` storage bucket defined in `backend/database/schema.sql`) |
+| ✅ 04 Flutter Engineering | Complete | Feature-first Flutter app (Minimal Auth, Clinical Dashboard, X-ray Scanner with interactive Grad-CAM Opacity Slider, Scan History, Profile & Backend Switcher) |
+| 🟡 05 Supabase Engineering | Schema Defined | SQL DDL (`users`, `predictions` tables & `xray-images` storage bucket defined in `backend/database/schema.sql`) |
 | ⬜ 06 System Integration | Planned | Connecting Flutter frontend to FastAPI backend & AI engine |
-| 🟡 07 Testing & QA | In Progress | Automated backend and AI pipeline test suites (13/13 tests passing) |
+| 🟡 07 Testing & QA | In Progress | Automated backend, AI pipeline, and Flutter test suites (14/14 tests passing) |
 | ⬜ 08 Deployment | Planned | Production server configuration & Flutter app build |
 | 🟡 09 Documentation | Complete | Specifications & progress documentation updated |
 | ⬜ 10 Product Roadmap | Planned | Post-MVP Multimodal expansion planning |
@@ -62,11 +62,11 @@ Authentication, Dashboard, Chest X-Ray Upload & Grad-CAM Viewer UI Implementatio
 
 | Module | Status | Details |
 | :--- | :--- | :--- |
-| Authentication | ✅ Backend Ready | `POST /api/v1/auth/login`, `POST /api/v1/auth/register` implemented with Supabase Auth + local fallback |
-| Dashboard | ⬜ Pending | Flutter frontend UI |
-| Prediction & Explainability | ✅ 100% Operational | Live DenseNet121 3-class prediction + Grad-CAM heatmap overlays + formatted clinical disclaimers |
-| History | ✅ Backend Ready | `GET /api/v1/history`, `GET /api/v1/history/{id}` implemented for list and detailed prediction retrieval |
-| Profile & Settings | ⬜ Pending | Flutter frontend UI |
+| Authentication | ✅ Fully Operational | Minimal Phase 1 Login with One-Tap Doctor Quick Access + Supabase / fallback support |
+| Dashboard | ✅ Fully Operational | Clinical statistics (Total, Normal, Pneumonia, Tuberculosis) + quick scan launcher |
+| Prediction & Explainability | ✅ Fully Operational | Camera/Gallery/Sample X-Ray selector + live AI inference + interactive Grad-CAM Opacity Slider |
+| History | ✅ Fully Operational | Filterable scan records (`All`, `Normal`, `Pneumonia`, `Tuberculosis`) with detailed bottom sheet |
+| Profile & Settings | ✅ Fully Operational | Verified Clinician card + dynamic FastAPI host configurator (Android Emulator / Localhost) |
 
 ---
 
@@ -99,13 +99,14 @@ Authentication, Dashboard, Chest X-Ray Upload & Grad-CAM Viewer UI Implementatio
 
 # Flutter Frontend Status (`frontend/`)
 
-- [x] Project Initialization (Very Good Ventures / VGV Architecture)
-- [x] Feature Placeholders Created (`authentication`, `dashboard`, `prediction`, `history`, `profile`)
-- [ ] Authentication UI Screens (Login, Register)
-- [ ] Dashboard Screen (Scan statistics, Quick Action Cards)
-- [ ] Chest X-ray Upload & Prediction Screen
-- [ ] Grad-CAM Heatmap Viewer Widget with Opacity Slider
-- [ ] History & Results Detail Screen
+- [x] Project Architecture (Feature-First + BLoC Pattern)
+- [x] Minimal Authentication Screen with One-Tap Quick Access (`lib/features/authentication/`)
+- [x] Clinical Dashboard Screen (`lib/features/dashboard/`)
+- [x] Chest X-ray Upload & Diagnostic Analysis Screen (`lib/features/prediction/`)
+- [x] Interactive Grad-CAM Heatmap Viewer with Opacity Slider (`lib/features/prediction/widgets/gradcam_viewer.dart`)
+- [x] Scan History & Disease Filter Chips Screen (`lib/features/history/`)
+- [x] Doctor Profile & Backend Host Configurator Screen (`lib/features/profile/`)
+- [x] Clean Analysis & Flutter Widget Tests (`flutter analyze` 0 issues, `flutter test` passing)
 
 ---
 
@@ -114,11 +115,11 @@ Authentication, Dashboard, Chest X-Ray Upload & Grad-CAM Viewer UI Implementatio
 Current Goal
 
 ```text
-Phase 04 — Flutter Frontend Engineering & UI Screens Implementation
+Phase 05 — Supabase Cloud Database & Storage Integration
 ```
 
 Next Milestone
 
 ```text
-Phase 05 — Supabase Cloud Database & Storage Integration
+Phase 06 — End-to-End System Integration & Production Build
 ```
