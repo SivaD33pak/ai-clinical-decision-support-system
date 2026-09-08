@@ -93,9 +93,9 @@ def main():
         asyncio.run(run_batch_predictions(args.dir, args.limit))
     else:
         # Default test scan if no arguments provided
-        default_test = "data/raw/chest_xray/test/TUBERCULOSIS/Tuberculosis-101.png"
+        default_test = os.path.join(backend_dir, "uploads", "sample_xray.png")
         if os.path.exists(default_test):
-            print("[INFO] No arguments specified. Running demonstration prediction on default test scan:\n")
+            print("[INFO] No arguments specified. Running demonstration prediction on default sample scan:\n")
             asyncio.run(run_single_prediction(default_test))
         else:
             parser.print_help()

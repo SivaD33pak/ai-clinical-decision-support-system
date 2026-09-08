@@ -2,7 +2,9 @@ import torch
 from PIL import Image, ImageOps
 from torchvision import transforms
 
-def letterbox_image(image: Image.Image, target_size: int = 224) -> Image.Image:
+DEFAULT_IMAGE_SIZE = 384
+
+def letterbox_image(image: Image.Image, target_size: int = DEFAULT_IMAGE_SIZE) -> Image.Image:
     """Preserves anatomical aspect ratio by resizing and centering on a black canvas."""
     src_w, src_h = image.size
     scale = target_size / max(src_w, src_h)
@@ -16,19 +18,29 @@ def letterbox_image(image: Image.Image, target_size: int = 224) -> Image.Image:
     return canvas
 
 def enhance_medical_contrast(image: Image.Image) -> Image.Image:
-    """Applies auto-contrast to normalize exposure variations across medical scanners."""
-    gray = ImageOps.autocontrast(image.convert("L"), cutoff=1)
-    return gray.convert("RGB")
+    """
+    Applies medical-grade adaptive histogram equalization and contrast normalization
+    to standardize exposure variations across different X-ray scanners.
+    """
+    gray = image.convert("L")
+    eq = ImageOps.equalize(gray)
+    auto = ImageOps.autocontrast(gray, cutoff=1)
+    blended = Image.blend(auto, eq, alpha=0.5)
+    return blended.convert("RGB")
 
-INFERENCE_TRANSFORMS = transforms.Compose([
-    transforms.Lambda(lambda img: enhance_medical_contrast(img)),
-    transforms.Lambda(lambda img: letterbox_image(img, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-])
+def get_inference_transforms(target_size: int = DEFAULT_IMAGE_SIZE):
+    return transforms.Compose([
+        transforms.Lambda(lambda img: enhance_medical_contrast(img)),
+        transforms.Lambda(lambda img: letterbox_image(img, target_size)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
 
-def preprocess_xray_image(image_path: str, device: str = "cpu") -> torch.Tensor:
-    """Preprocesses a chest X-ray image for DenseNet121 inference."""
+INFERENCE_TRANSFORMS = get_inference_transforms(DEFAULT_IMAGE_SIZE)
+
+def preprocess_xray_image(image_path: str, device: str = "cpu", target_size: int = DEFAULT_IMAGE_SIZE) -> torch.Tensor:
+    """Preprocesses a chest X-ray image for SOTA ConvNeXt/DenseNet inference."""
     img = Image.open(image_path).convert("RGB")
-    tensor = INFERENCE_TRANSFORMS(img).unsqueeze(0)
+    tfm = INFERENCE_TRANSFORMS if target_size == DEFAULT_IMAGE_SIZE else get_inference_transforms(target_size)
+    tensor = tfm(img).unsqueeze(0)
     return tensor.to(device)

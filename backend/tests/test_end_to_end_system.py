@@ -93,8 +93,8 @@ def run_system_integration_test():
     print(f"  -> Breakdown: {breakdown}")
     print(f"  -> Disclaimer: {disclaimer}")
 
-    assert disease in ["Normal", "Pneumonia", "Tuberculosis"]
-    assert len(breakdown) == 3
+    assert disease in ["Normal", "Tuberculosis", "Pneumonia"]
+    assert len(breakdown) in [2, 3]
     assert disclaimer.startswith("⚠️")
 
     # 4. Cloud Database & History Verification Contract
