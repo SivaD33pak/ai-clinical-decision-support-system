@@ -25,7 +25,13 @@ if sys.platform == "win32":
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 BACKEND_DIR = os.path.join(ROOT_DIR, "backend")
 FRONTEND_DIR = os.path.join(ROOT_DIR, "frontend")
-PYTHON_EXE = os.path.join(BACKEND_DIR, "venv", "Scripts", "python.exe")
+PYTHON_EXE = sys.executable
+if not os.path.exists(PYTHON_EXE) or "backend" not in PYTHON_EXE:
+    for candidate in ["env", "venv"]:
+        cand_path = os.path.join(BACKEND_DIR, candidate, "Scripts", "python.exe")
+        if os.path.exists(cand_path):
+            PYTHON_EXE = cand_path
+            break
 
 def run_step(title, cmd, cwd):
     print(f"\n================================================================")

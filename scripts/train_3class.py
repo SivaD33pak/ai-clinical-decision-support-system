@@ -11,6 +11,12 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 
+try:
+    from tqdm import tqdm
+    HAS_TQDM = True
+except ImportError:
+    HAS_TQDM = False
+
 # Add backend directory to sys.path
 backend_dir = Path(__file__).parent.parent / "backend"
 if str(backend_dir) not in sys.path:
@@ -85,11 +91,12 @@ def scan_split(split_dir: str) -> List[Tuple[str, int]]:
                     samples.append((os.path.join(cdir, fname), label))
     return samples
 
-def evaluate_loader(model, loader, criterion, device):
+def evaluate_loader(model, loader, criterion, device, desc="Evaluating"):
     model.eval()
     t_loss, all_preds, all_labels = 0.0, [], []
+    eval_iter = tqdm(loader, desc=desc, leave=False) if HAS_TQDM else loader
     with torch.no_grad():
-        for imgs, lbls in loader:
+        for imgs, lbls in eval_iter:
             imgs, lbls = imgs.to(device), lbls.to(device)
             out = model(imgs)
             loss = criterion(out, lbls)
@@ -184,7 +191,9 @@ def run_training():
         model.train()
         t_loss, correct, total = 0.0, 0, 0
         start = time.time()
-        for batch_idx, (imgs, lbls) in enumerate(train_loader):
+        
+        train_iter = tqdm(enumerate(train_loader), total=len(train_loader), desc=f"Epoch {epoch}/4 [Head]", leave=True) if HAS_TQDM else enumerate(train_loader)
+        for batch_idx, (imgs, lbls) in train_iter:
             imgs, lbls = imgs.to(device), lbls.to(device)
             optimizer_head.zero_grad()
             out = model(imgs)
@@ -197,9 +206,14 @@ def run_training():
             correct += (preds == lbls).sum().item()
             total += lbls.size(0)
 
+            if HAS_TQDM:
+                train_iter.set_postfix(loss=f"{t_loss/total:.4f}", acc=f"{correct/total*100:.1f}%")
+            elif (batch_idx + 1) % 20 == 0 or (batch_idx + 1) == len(train_loader):
+                print(f"  [Epoch {epoch}/4 Head] Batch {batch_idx+1}/{len(train_loader)} - Loss: {t_loss/total:.4f}, Acc: {correct/total*100:.1f}%", flush=True)
+
         scheduler_head.step()
         elapsed = time.time() - start
-        val_loss, val_acc, val_f1, _, _ = evaluate_loader(model, val_loader, criterion, device)
+        val_loss, val_acc, val_f1, _, _ = evaluate_loader(model, val_loader, criterion, device, desc=f"Epoch {epoch}/4 [Val]")
         print(f"Epoch {epoch}/4 [Head] - Train Loss: {t_loss/total:.4f}, Acc: {correct/total*100:.1f}% | Val Acc: {val_acc*100:.1f}%, F1: {val_f1*100:.1f}% ({elapsed:.1f}s)")
 
     # Phase 2: Unfreeze upper dense blocks for deep fine-tuning
@@ -218,7 +232,9 @@ def run_training():
         model.train()
         t_loss, correct, total = 0.0, 0, 0
         start = time.time()
-        for batch_idx, (imgs, lbls) in enumerate(train_loader):
+        
+        train_iter = tqdm(enumerate(train_loader), total=len(train_loader), desc=f"Epoch {epoch}/4 [Fine-Tune]", leave=True) if HAS_TQDM else enumerate(train_loader)
+        for batch_idx, (imgs, lbls) in train_iter:
             imgs, lbls = imgs.to(device), lbls.to(device)
             optimizer_ft.zero_grad()
             out = model(imgs)
@@ -231,9 +247,14 @@ def run_training():
             correct += (preds == lbls).sum().item()
             total += lbls.size(0)
 
+            if HAS_TQDM:
+                train_iter.set_postfix(loss=f"{t_loss/total:.4f}", acc=f"{correct/total*100:.1f}%")
+            elif (batch_idx + 1) % 20 == 0 or (batch_idx + 1) == len(train_loader):
+                print(f"  [Epoch {epoch}/4 FT] Batch {batch_idx+1}/{len(train_loader)} - Loss: {t_loss/total:.4f}, Acc: {correct/total*100:.1f}%", flush=True)
+
         scheduler_ft.step()
         elapsed = time.time() - start
-        val_loss, val_acc, val_f1, _, _ = evaluate_loader(model, val_loader, criterion, device)
+        val_loss, val_acc, val_f1, _, _ = evaluate_loader(model, val_loader, criterion, device, desc=f"Epoch {epoch}/4 [Val]")
         print(f"Epoch {epoch}/4 [Fine-Tune] - Train Loss: {t_loss/total:.4f}, Acc: {correct/total*100:.1f}% | Val Acc: {val_acc*100:.1f}%, F1: {val_f1*100:.1f}% ({elapsed:.1f}s)")
 
         if val_f1 > best_val_f1:
