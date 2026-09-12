@@ -41,6 +41,7 @@ if str(backend_dir) not in sys.path:
 from ai_core.models.convnext import ConvNeXtXRay
 from ai_core.models.densenet import DenseNet121XRay
 from ai_core.training.checkpoint import save_checkpoint
+from ai_core.serving.preprocessing import apply_clinical_thoracic_filter
 
 CLASS_NAMES = ["Normal", "Tuberculosis"]
 CLASS_DIR_MAP = {
@@ -52,27 +53,6 @@ CLASS_DIR_MAP = {
     "pos": 1,
     "positive": 1
 }
-
-def letterbox_image(image: Image.Image, target_size: int = 384) -> Image.Image:
-    """Preserves anatomical aspect ratio by resizing and centering on a black canvas."""
-    src_w, src_h = image.size
-    scale = target_size / max(src_w, src_h)
-    new_w, new_h = max(1, int(src_w * scale)), max(1, int(src_h * scale))
-    resized = image.resize((new_w, new_h), Image.Resampling.BILINEAR)
-    
-    canvas = Image.new("RGB", (target_size, target_size), (0, 0, 0))
-    pad_left = (target_size - new_w) // 2
-    pad_top = (target_size - new_h) // 2
-    canvas.paste(resized, (pad_left, pad_top))
-    return canvas
-
-def enhance_medical_contrast(image: Image.Image) -> Image.Image:
-    """Applies adaptive histogram equalization and contrast stretching."""
-    gray = image.convert("L")
-    eq = ImageOps.equalize(gray)
-    auto = ImageOps.autocontrast(gray, cutoff=1)
-    blended = Image.blend(auto, eq, alpha=0.5)
-    return blended.convert("RGB")
 
 class FocalLoss(nn.Module):
     """Focal Loss to address class imbalance and penalize hard false negatives."""
@@ -205,21 +185,20 @@ def run_training(args):
     print(f"Train Class Distribution: Normal={class_counts[0]}, Tuberculosis={class_counts[1]}")
     print(f"Focal Loss Inverse Class Weights: {[round(w, 3) for w in class_weights]}")
 
-    # Transforms
+    # Robust Lung-Focused Transforms (Eliminates Corner Shortcuts)
     train_transform = transforms.Compose([
-        transforms.Lambda(lambda img: enhance_medical_contrast(img)),
-        transforms.Lambda(lambda img: letterbox_image(img, args.image_size)),
+        transforms.Lambda(lambda img: apply_clinical_thoracic_filter(img, args.image_size)),
+        transforms.RandomResizedCrop(args.image_size, scale=(0.82, 1.0), ratio=(0.95, 1.05)),
         transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomAffine(degrees=7, translate=(0.04, 0.04), scale=(0.96, 1.04)),
-        transforms.ColorJitter(brightness=0.1, contrast=0.1),
+        transforms.RandomAffine(degrees=8, translate=(0.04, 0.04), scale=(0.95, 1.05)),
+        transforms.ColorJitter(brightness=0.12, contrast=0.12),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        transforms.RandomErasing(p=0.25, scale=(0.02, 0.12), value="random")
+        transforms.RandomErasing(p=0.3, scale=(0.02, 0.15), value="random")
     ])
 
     eval_transform = transforms.Compose([
-        transforms.Lambda(lambda img: enhance_medical_contrast(img)),
-        transforms.Lambda(lambda img: letterbox_image(img, args.image_size)),
+        transforms.Lambda(lambda img: apply_clinical_thoracic_filter(img, args.image_size)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])

@@ -76,7 +76,42 @@ def test_ai_pipeline():
     assert metrics["specificity"] == 1.0
     print("[PASS] Clinical metrics:", metrics)
 
+    print("\n--- 6. Testing Clinical Thoracic Filter & Anti-Shortcut Corner Mask ---")
+    from ai_core.serving.preprocessing import apply_clinical_thoracic_filter
+    import numpy as np
+    raw_dummy = Image.new("RGB", (512, 512), color=(220, 220, 220))  # Simulates bright film borders
+    filtered = apply_clinical_thoracic_filter(raw_dummy, target_size=384)
+    arr = np.array(filtered)
+    assert arr.shape == (384, 384, 3), f"Expected shape (384, 384, 3), got {arr.shape}"
+    assert arr[0, 0, 0] == 0 and arr[0, -1, 0] == 0 and arr[-1, 0, 0] == 0 and arr[-1, -1, 0] == 0
+    print("[PASS] Thoracic filter zeroes corner shortcuts successfully.")
+    print("\n--- 7. Testing 3-Class ConvNeXt & TBX11K Triage Integration ---")
+    model_3cls = ConvNeXtXRay(num_classes=3, pretrained=False)
+    assert model_3cls.classes == ["Normal", "Sick & Non-TB", "Tuberculosis"]
+    logits_3cls = model_3cls(torch.randn(2, 3, 384, 384))
+    assert logits_3cls.shape == (2, 3), f"Expected (2, 3), got {logits_3cls.shape}"
+    
+    with tempfile.TemporaryDirectory() as tmpdir:
+        test_img_path = os.path.join(tmpdir, "test_3cls.png")
+        Image.new("RGB", (384, 384), color=(100, 100, 100)).save(test_img_path)
+        predictor_3cls = DiseasePredictor(model_3cls, device="cpu")
+        res_3cls = predictor_3cls.predict_single(test_img_path, generate_cam=False)
+        assert len(res_3cls["predictions_breakdown"]) == 3
+        assert res_3cls["disease"] in ["Normal", "Sick & Non-TB", "Tuberculosis"]
+        print("[PASS] 3-Class ConvNeXt output breakdown:", res_3cls["predictions_breakdown"])
+
+    from ai_core.data.tbx11k_dataset import TBX11KDataset
+    data_dir = os.path.join(backend_root.parent, "data", "raw", "TBX11K")
+    if os.path.exists(data_dir):
+        val_ds = TBX11KDataset(data_dir, split="val", return_meta=True)
+        assert len(val_ds) > 0
+        img_t, lbl, meta = val_ds[0]
+        assert img_t.shape == (3, 384, 384)
+        assert lbl in [0, 1, 2]
+        print(f"[PASS] Successfully loaded TBX11K sample: {meta['filename']} -> Class {lbl} ({meta['class_name']})")
+
     print("\n[SUCCESS] ALL SOTA TUBERCULOSIS AI PIPELINE & GRAD-CAM TESTS PASSED CLEANLY!")
 
 if __name__ == "__main__":
     test_ai_pipeline()
+

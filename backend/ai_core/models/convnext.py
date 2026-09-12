@@ -2,14 +2,15 @@ import torch
 import torch.nn as nn
 from torchvision.models import convnext_tiny, ConvNeXt_Tiny_Weights
 
-DEFAULT_TB_CLASSES = ["Normal", "Tuberculosis"]
+DEFAULT_BINARY_CLASSES = ["Normal", "Tuberculosis"]
+DEFAULT_TRIAGE_CLASSES = ["Normal", "Sick & Non-TB", "Tuberculosis"]
 
 class ConvNeXtXRay(nn.Module):
     """
     State-of-the-Art ConvNeXt-Tiny customized for High-Resolution Chest X-ray Classification.
     Features 7x7 depthwise convolutions, inverted bottlenecks, and LayerNorm.
     """
-    def __init__(self, num_classes: int = 2, pretrained: bool = True, classes: list = None):
+    def __init__(self, num_classes: int = 3, pretrained: bool = True, classes: list = None):
         super().__init__()
         weights = ConvNeXt_Tiny_Weights.DEFAULT if pretrained else None
         self.backbone = convnext_tiny(weights=weights)
@@ -22,7 +23,14 @@ class ConvNeXtXRay(nn.Module):
             nn.Dropout(p=0.3),
             nn.Linear(in_features, num_classes)
         )
-        self.classes = classes or DEFAULT_TB_CLASSES[:num_classes]
+        if classes:
+            self.classes = classes
+        elif num_classes == 3:
+            self.classes = DEFAULT_TRIAGE_CLASSES
+        elif num_classes == 2:
+            self.classes = DEFAULT_BINARY_CLASSES
+        else:
+            self.classes = [f"Class_{i}" for i in range(num_classes)]
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return self.backbone(x)
